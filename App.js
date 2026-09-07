@@ -159,7 +159,7 @@ export default function App() {
         {/* Header */}
         <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16 }]}>
           <Image source={require('./logga.png')} style={styles.vidingehemLogoImage} resizeMode="contain" />
-          <TouchableOpacity onPress={handleLogout} style={{ padding: 6 }}>
+          <TouchableOpacity onPress={handleLogout} style={[{ padding: 6 }, { cursor: 'pointer' }]}>
             <Text style={{ color: '#AAAAAA', fontSize: 12 }}>Logga ut</Text>
           </TouchableOpacity>
         </View>
@@ -167,25 +167,25 @@ export default function App() {
         {/* Huvudmenyknappar */}
         <View style={styles.tabGridContainer}>
           <TouchableOpacity 
-            style={[styles.gridTab, activeTab === 'kundservice' ? styles.activeGridTab : styles.inactiveGridTab]} 
+            style={[styles.gridTab, activeTab === 'kundservice' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
             onPress={() => { setActiveTab('kundservice'); setActiveSubTab(null); }}
           >
             <Text style={[styles.gridTabText, activeTab === 'kundservice' && styles.activeGridTabText]}>💬 Chatt/Felanmälan</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.gridTab, activeTab === 'boende' ? styles.activeGridTab : styles.inactiveGridTab]} 
+            style={[styles.gridTab, activeTab === 'boende' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
             onPress={() => { setActiveTab('boende'); setActiveSubTab(null); }}
           >
             <Text style={[styles.gridTabText, activeTab === 'boende' && styles.activeGridTabText]}>🏠 Mitt boende</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.gridTab, activeTab === 'boplats' ? styles.activeGridTab : styles.inactiveGridTab]} 
+            style={[styles.gridTab, activeTab === 'boplats' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
             onPress={() => { setActiveTab('boplats'); setActiveSubTab(null); }}
           >
             <Text style={[styles.gridTabText, activeTab === 'boplats' && styles.activeGridTabText]}>🔍 Boplats</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.gridTab, activeTab === 'notiser' ? styles.activeGridTab : styles.inactiveGridTab]} 
+            style={[styles.gridTab, activeTab === 'notiser' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
             onPress={() => { setActiveTab('notiser'); setActiveSubTab(null); }}
           >
             <Text style={[styles.gridTabText, activeTab === 'notiser' && styles.activeGridTabText]}>🔔 Notiser</Text>
@@ -196,19 +196,19 @@ export default function App() {
         {activeTab === 'boende' && (
           <View style={styles.subTabContainer}>
             <TouchableOpacity 
-              style={[styles.subGridTab, activeSubTab === 'arenden' ? styles.activeGridTab : styles.inactiveGridTab]} 
+              style={[styles.subGridTab, activeSubTab === 'arenden' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
               onPress={() => setActiveSubTab('arenden')}
             >
               <Text style={[styles.gridTabText, activeSubTab === 'arenden' && styles.activeGridTabText]}>📋 Ärenden</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.subGridTab, activeSubTab === 'fakturor' ? styles.activeGridTab : styles.inactiveGridTab]} 
+              style={[styles.subGridTab, activeSubTab === 'fakturor' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
               onPress={() => setActiveSubTab('fakturor')}
             >
               <Text style={[styles.gridTabText, activeSubTab === 'fakturor' && styles.activeGridTabText]}>💳 Fakturor</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.subGridTab, activeSubTab === 'tillval' ? styles.activeGridTab : styles.inactiveGridTab]} 
+              style={[styles.subGridTab, activeSubTab === 'tillval' ? styles.activeGridTab : styles.inactiveGridTab, { cursor: 'pointer' }]} 
               onPress={() => setActiveSubTab('tillval')}
             >
               <Text style={[styles.gridTabText, activeSubTab === 'tillval' && styles.activeGridTabText]}>🚪 Tillval</Text>
