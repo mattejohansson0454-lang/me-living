@@ -5,10 +5,10 @@ export default async function handler(req, res) {
 
   try {
     const { currentMessages, userText, tenantProfile } = req.body;
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'OPENAI_API_KEY saknas i miljövariablerna.' });
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ error: 'GROQ_API_KEY saknas i miljövariablerna.' });
     }
 
     const knowledgeBaseText = `
@@ -72,14 +72,14 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.3-70b-versatile',
         messages: messages,
         temperature: 0.3
       })
@@ -88,7 +88,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'OpenAI API error' });
+      return res.status(response.status).json({ error: data.error?.message || 'Groq API error' });
     }
 
     const aiText = data.choices[0]?.message?.content || 'Inget svar från AI.';
