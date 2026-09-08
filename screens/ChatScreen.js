@@ -20,6 +20,10 @@ export default function ChatScreen({ myTickets, setMyTickets }) {
   };
 
   const initialMessages = [
+    {
+      role: 'assistant',
+      content: 'Välkommen till Vidingehems boendeassistent! Här kan du ställa dina frågor om boendet eller göra en felanmälan direkt i chatten.'
+    },
     { 
       role: 'assistant', 
       content: `Objekt\n✓ ${tenantProfile.fullObject}` 
@@ -41,7 +45,13 @@ export default function ChatScreen({ myTickets, setMyTickets }) {
     const match = rawText.match(/SVARSALTERNATIV:\s*(\[.*?\])/s);
     if (match) {
       try {
-        const options = JSON.parse(match[1]);
+        let jsonStr = match[1];
+        let options;
+        try {
+          options = JSON.parse(jsonStr);
+        } catch (e1) {
+          options = JSON.parse(jsonStr.replace(/'/g, '"'));
+        }
         const cleanText = rawText.replace(/SVARSALTERNATIV:\s*\[.*?\]/s, '').trim();
         return { cleanText, options };
       } catch (e) {
