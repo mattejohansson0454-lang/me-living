@@ -5,7 +5,11 @@ export default async function handler(req, res) {
 
   try {
     const { currentMessages, userText, tenantProfile } = req.body;
-    const OPENAI_API_KEY = "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";
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OPENAI_API_KEY saknas i miljövariablerna.' });
+    }
 
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
