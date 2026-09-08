@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   try {
     const { currentMessages, userText, tenantProfile } = req.body;
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6J34D4DuGpXXJSPqhoH3XikJUSbBShiaGE-cZR0CNRzYw';
+    const OPENAI_API_KEY = "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";
 
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
@@ -62,37 +62,40 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
    - **Ansvarig tekniker / Handläggare:** [Vald bland Kevin, Max, Radoman, Fatmir, Patrik, Andrzej]
    - **Status:** Registrerat`;
 
-    const contents = (currentMessages || []).map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
-    
-    contents.push({ role: 'user', parts: [{ text: userText }] });
+    const messages = [{ role: 'system', content: systemPrompt }];
+    (currentMessages || []).forEach(m => {
+      messages.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+    });
+    messages.push({ role: 'user', content: userText });
 
-    const googleResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GEMINI_API_KEY}`
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        contents: contents,
-        generationConfig: {
-          temperature: 0.3,
-        }
+        model: 'gpt-4o-mini',
+        messages: messages,
+        temperature: 0.3
       })
     });
 
-    const data = await googleResponse.json();
+    const data = await response.json();
 
-    if (!googleResponse.ok) {
-      return res.status(googleResponse.status).json({ error: data.error?.message || 'Google API error' });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || 'OpenAI API error' });
     }
 
-    return res.status(200).json(data);
+    const aiText = data.choices[0]?.message?.content || 'Inget svar från AI.';
+    
+    return res.status(200).json({
+      candidates: [{
+        content: {
+          parts: [{ text: aiText }]
+        }
+      }]
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
