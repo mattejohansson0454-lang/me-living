@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, Alert } from 'react-native';
 import styles from '../styles/appStyles';
 
-export default function HousingScreen() {
+export default function HousingScreen({ tenantProfile }) {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -78,7 +78,14 @@ export default function HousingScreen() {
   return (
     <ScrollView style={{ padding: 16 }}>
       <Text style={styles.sectionTitle}>🏠 Mitt Boende</Text>
-      <Text style={{ color: '#AAA', marginBottom: 12 }}>PG Vejdes väg 7, lgh 1011 (3 ROK, 72 kvm)</Text>
+      
+      {/* Dynamisk information baserad på inloggad användare */}
+      <Text style={{ color: '#AAA', marginBottom: 4 }}>
+        {tenantProfile?.address} (Lgh {tenantProfile?.apartment})
+      </Text>
+      <Text style={{ color: '#00E5FF', fontSize: 12, marginBottom: 12 }}>
+        Fastighet / Objekt: {tenantProfile?.fullObject} {tenantProfile?.role === 'admin' ? '👑 (Adminbehörighet)' : ''}
+      </Text>
        
       <View style={styles.infoBox}>
         <Text style={styles.infoBoxHeader}>🧺 Mina Tvättbokningar</Text>
