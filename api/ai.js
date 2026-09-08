@@ -72,23 +72,49 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
-        messages: messages,
-        temperature: 0.3
-      })
-    });
+    // Lista med modeller att testa i tur och ordning om någon dör
+    const modelsToTry = [
+      'llama-3.1-8b-instant',
+      'llama-3.2-3b-preview',
+      'llama-3.2-1b-preview',
+      'llama-3.3-70b-versatile'
+    ];
 
-    const data = await response.json();
+    let response = null;
+    let data = null;
+    let lastError = '';
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'Groq API error' });
+    for (const model of modelsToTry) {
+      try {
+        const resCandidate = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            temperature: 0.3
+          })
+        });
+
+        const dataCandidate = await resCandidate.json();
+
+        if (resCandidate.ok) {
+          response = resCandidate;
+          data = dataCandidate;
+          break; // Hittade en fungerande modell, gå vidare
+        } else {
+          lastError = dataCandidate.error?.message || 'Okänt fel';
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
+    }
+
+    if (!response || !response.ok) {
+      return res.status(500).json({ error: `Alla modeller misslyckades. Senaste fel: ${lastError}` });
     }
 
     const aiText = data.choices[0]?.message?.content || 'Inget svar från AI.';
