@@ -72,24 +72,67 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: messages,
-        temperature: 0.3,
-        max_tokens: 800
-      })
-    });
+    // Hämta dynamiska modeller från Groq och kombinera med säkra standarder
+    let candidateModels = [
+      'llama-3.3-70b-versatile', 
+      'llama-3.1-8b-instant', 
+      'llama3-8b-8192', 
+      'llama3-70b-8192',
+      'mixtral-8x7b-32768'
+    ];
 
-    const data = await response.json();
+    try {
+      const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` }
+      });
+      if (modelsRes.ok) {
+        const modelsData = await modelsRes.json();
+        const apiModels = (modelsData.data || [])
+          .map(m => m.id)
+          .filter(id => !id.includes('whisper') && !id.includes('embed') && !id.includes('guard') && !id.includes('tts') && !id.includes('vision'));
+        if (apiModels.length > 0) {
+          candidateModels = [...new Set([...apiModels, ...candidateModels])];
+        }
+      }
+    } catch (e) {
+      // Ignorera fel vid modellhämtning och kör på standardlistan
+    }
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'Groq API error' });
+    let response;
+    let data;
+
+    // Testa modellerna i tur och ordning tills en fungerar
+    for (const modelId of candidateModels) {
+      response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: messages,
+          temperature: 0.3,
+          max_tokens: 1000
+        })
+      });
+
+      data = await response.json();
+      if (response.ok) {
+        break; // Hoppa ur loppen direkt när vi hittar en fungerande modell
+      }
+
+      // Om felet är att modellen saknas, testa nästa i listan
+      if (data.error && (data.error.message?.includes('does not exist') || data.error.message?.includes('not have access'))) {
+        continue;
+      }
+      
+      break; // Vid andra typer av fel (t.ex. ogiltig nyckel), bryt loopen
+    }
+
+    if (!response || !response.ok) {
+      return res.status(response?.status || 500).json({ error: data?.error?.message || 'Alla modeller misslyckades.' });
     }
 
     const aiText = data.choices[0]?.message?.content || 'Inget svar från AI.';
