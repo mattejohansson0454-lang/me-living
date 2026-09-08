@@ -60,9 +60,10 @@ export default function App() {
       } else {
         await SecureStore.deleteItemAsync('vidingehem_user_token');
       }
-      setTenantProfile(null);
     } catch (error) {
       console.log('Kunde inte radera session', error);
+    } finally {
+      setTenantProfile(null);
     }
   };
 
