@@ -29,12 +29,14 @@ Intern kunskapsbas och ansvarsfördelningar:
 ${knowledgeBaseText}
 
 Tillgängliga teammedlemmar för ärendetilldelning på Vidingehem:
-- Kevin
-- Max
-- Radoman
-- Fatmir
-- Patrik
-- Andrzej
+- Fastighetsvärd
+- Fastighetsskötare
+- Elektriker
+- Snickare
+- Målare
+- Ventilationstekniker
+- Besiktningsman
+- Samordnare
 
 Ärenden kan gälla:
 - Lägenhetsfel (t.ex. kök, badrum, vitvaror)
@@ -52,7 +54,7 @@ Obligatoriska uppgifter som MÅSTE samlas in (anpassa efter ärendets typ):
 6. **Husdjur:** (Relevant om tekniker behöver gå in i lägenheten)
 
 REGLER FÖR SVAR OCH KLICKBARA RUTOR:
-- Ställ max 1-2 frågor åt gången och var professionell.
+- Ställ max 1-2 frågor åt gången och var professionell. Svara kort och koncert, upprepa aldrig tidigare meningar.
 - Du MÅSTE inkludera klickbara svarsalternativ i slutet av varje svar på exakt detta format så att appen kan rita ut klickbara rutor:
   SVARSALTERNATIV: ["Alternativ 1", "Alternativ 2", "Alternativ 3"]
 - När ALL nödvändig information för ärendet är samlad, sammanfatta ärendet komplett för registrering i Momentum enligt exakt denna hierarki:
@@ -72,13 +74,11 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    // Hämta dynamiska modeller från Groq och kombinera med säkra standarder
     let candidateModels = [
       'llama-3.3-70b-versatile', 
       'llama-3.1-8b-instant', 
       'llama3-8b-8192', 
-      'llama3-70b-8192',
-      'mixtral-8x7b-32768'
+      'llama3-70b-8192'
     ];
 
     try {
@@ -95,14 +95,11 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
           candidateModels = [...new Set([...apiModels, ...candidateModels])];
         }
       }
-    } catch (e) {
-      // Ignorera fel vid modellhämtning och kör på standardlistan
-    }
+    } catch (e) {}
 
     let response;
     let data;
 
-    // Testa modellerna i tur och ordning tills en fungerar
     for (const modelId of candidateModels) {
       response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -113,22 +110,22 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
         body: JSON.stringify({
           model: modelId,
           messages: messages,
-          temperature: 0.3,
-          max_tokens: 1000
+          temperature: 0.4,
+          max_tokens: 600,
+          frequency_penalty: 0.6, // Stoppar modellen från att upprepa samma ord/fraser
+          presence_penalty: 0.6  // Tvingar den att föra konversationen framåt
         })
       });
 
       data = await response.json();
       if (response.ok) {
-        break; // Hoppa ur loppen direkt när vi hittar en fungerande modell
+        break;
       }
 
-      // Om felet är att modellen saknas, testa nästa i listan
       if (data.error && (data.error.message?.includes('does not exist') || data.error.message?.includes('not have access'))) {
         continue;
       }
-      
-      break; // Vid andra typer av fel (t.ex. ogiltig nyckel), bryt loopen
+      break;
     }
 
     if (!response || !response.ok) {
