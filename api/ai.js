@@ -11,6 +11,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GROQ_API_KEY saknas i miljövariablerna i Vercel.' });
     }
 
+    // Hämta tillgängliga modeller från Groq
     const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
       method: 'GET',
       headers: {
@@ -20,17 +21,19 @@ export default async function handler(req, res) {
 
     if (!modelsRes.ok) {
       const errText = await modelsRes.text();
-      return res.status(500).json({ error: `Kunde inte verifiera Groq-nyckel / hämta modeller: ${errText}` });
+      return res.status(500).json({ error: `Kunde inte hämta modeller från Groq: ${errText}` });
     }
 
     const modelsData = await modelsRes.json();
     const modelsList = modelsData.data || [];
 
-    if (modelsList.length === 0) {
-      return res.status(500).json({ error: 'Groq returnerade inga tillgängliga modeller för denna API-nyckel.' });
-    }
+    // Välj en ren chattmodell och undvik eventuella special-/verktygsmodeller
+    const chatModel = modelsList.find(m => 
+      (m.id.includes('llama-3.1-8b') || m.id.includes('8b-instant') || m.id.includes('instruct')) && 
+      !m.id.includes('tool')
+    ) || modelsList.find(m => !m.id.includes('tool')) || modelsList[0];
 
-    const selectedModel = modelsList[0].id;
+    const selectedModel = chatModel ? chatModel.id : 'llama-3.1-8b-instant';
 
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
