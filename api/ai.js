@@ -79,7 +79,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: messages,
         temperature: 0.3
       })
