@@ -11,30 +11,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GROQ_API_KEY saknas i miljövariablerna i Vercel.' });
     }
 
-    // Hämta tillgängliga modeller från Groq
-    const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      }
-    });
-
-    if (!modelsRes.ok) {
-      const errText = await modelsRes.text();
-      return res.status(500).json({ error: `Kunde inte hämta modeller från Groq: ${errText}` });
-    }
-
-    const modelsData = await modelsRes.json();
-    const modelsList = modelsData.data || [];
-
-    // Filtrera bort ljud-, embed- och skyddsmodeller för att endast hitta chattmodeller
-    const validChatModels = modelsList.filter(m => {
-      const id = m.id.toLowerCase();
-      return !id.includes('whisper') && !id.includes('embed') && !id.includes('guard') && !id.includes('tts');
-    });
-
-    const selectedModel = validChatModels.length > 0 ? validChatModels[0].id : 'llama-3.1-8b-instant';
-
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
     - Nyckelord (trapphus, port, belysning): Fel i gemensamma utrymmen anmäls till fastigheten.
@@ -103,9 +79,10 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'llama-3.1-8b-instant',
         messages: messages,
-        temperature: 0.3
+        temperature: 0.3,
+        max_tokens: 800
       })
     });
 
