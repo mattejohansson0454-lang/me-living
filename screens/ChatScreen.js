@@ -51,16 +51,19 @@ export default function ChatScreen({ myTickets, setMyTickets }) {
     return { cleanText: rawText, options: [] };
   };
 
-  const checkForTicketCompletion = (replyText) => {
-    if (replyText.includes('Status: Registrerat') || replyText.includes('Momentum')) {
+  const checkForTicketCompletion = (replyText, fullConversationText) => {
+    if (replyText.includes('Status: Registrerat') || replyText.includes('Registrerat') || replyText.includes('Momentum')) {
+      const combinedText = fullConversationText + '\n' + replyText;
+      
       const newTicket = {
         id: 'R-' + Math.floor(1000 + Math.random() * 9000),
         object: tenantProfile.fullObject,
-        room: extractField(replyText, 'Utrymme') || 'Allmänt',
-        component: extractField(replyText, 'Feltyp') || extractField(replyText, 'Komponent') || 'Fastighet',
-        access: extractField(replyText, 'Tillträde') || 'Enligt överenskommelse',
-        pets: extractField(replyText, 'Husdjur') || 'Inga',
-        handler: extractField(replyText, 'Ansvarig tekniker') || 'Fastighetsteamet Vidingehem',
+        room: extractField(combinedText, 'Utrymme') || 'Kök',
+        component: extractField(combinedText, 'Utrustning / Komponent') || extractField(combinedText, 'Komponent') || extractField(combinedText, 'Feltyp') || 'Fastighet',
+        description: extractField(combinedText, 'Beskrivning') || 'Inrapporterat fel',
+        access: extractField(combinedText, 'Tillträde & Nyckel') || extractField(combinedText, 'Tillträde') || 'Enligt överenskommelse',
+        pets: extractField(combinedText, 'Husdjur') || 'Inga',
+        handler: extractField(combinedText, 'Ansvarig tekniker') || 'Fastighetsteamet Vidingehem',
         status: 'Aktiv',
         latestNote: 'Ärendet har registrerats i Momentum enligt Vidingehems avgränsningslista.'
       };
@@ -140,7 +143,8 @@ export default function ChatScreen({ myTickets, setMyTickets }) {
       };
       setMessages([...updatedMessages, newAssistantMsg]);
 
-      checkForTicketCompletion(cleanText);
+      const allConversationText = updatedMessages.map(m => m.content).join('\n');
+      checkForTicketCompletion(cleanText, allConversationText);
     } catch (error) {
       console.error('Fel vid AI-anrop:', error);
       setLoading(false);
