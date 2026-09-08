@@ -81,7 +81,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
         'X-Title': 'Vidingehem Boendeassistent'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3-8b-instruct:free',
+        model: 'meta-llama/llama-3.1-8b-instruct:free',
         messages: messages,
         temperature: 0.3
       })
