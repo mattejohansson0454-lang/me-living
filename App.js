@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StatusBar, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StatusBar, Image, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 
@@ -33,12 +33,18 @@ export default function App() {
 
   const checkUserSession = async () => {
     try {
-      const savedToken = await SecureStore.getItemAsync('vidingehem_user_token');
+      let savedToken = null;
+      if (Platform.OS === 'web') {
+        savedToken = localStorage.getItem('vidingehem_user_token');
+      } else {
+        savedToken = await SecureStore.getItemAsync('vidingehem_user_token');
+      }
+
       if (savedToken) {
-        // Om token finns, ladda standardprofilen (eller spara vilken användare som var inloggad)
-        // Här sätter vi Mattias (admin) som standard vid återanvänd session
-        const defaultTenant = getTenantProfile('user_mattias');
-        setTenantProfile(defaultTenant);
+        // Extrahera rätt användar-ID från token (t.ex. "active session token user_fatmir")
+        const tenantId = savedToken.replace('active session token ', '');
+        const tenant = getTenantProfile(tenantId) || getTenantProfile('user_mattias');
+        setTenantProfile(tenant);
       }
     } catch (error) {
       console.log('Kunde inte läsa sparad session', error);
@@ -49,7 +55,11 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await SecureStore.deleteItemAsync('vidingehem_user_token');
+      if (Platform.OS === 'web') {
+        localStorage.removeItem('vidingehem_user_token');
+      } else {
+        await SecureStore.deleteItemAsync('vidingehem_user_token');
+      }
       setTenantProfile(null);
     } catch (error) {
       console.log('Kunde inte radera session', error);
@@ -221,7 +231,7 @@ export default function App() {
         )}
 
         <View style={{ flex: 1 }}>
-          {activeTab === 'kundservice' && <ChatScreen myTickets={myTickets} setMyTickets={setMyTickets} tenantProfile={tenantProfile} />}
+          {activeTab === 'kundservice' && <ChatScreen myTickets={myTickets} setMyTickets={myTickets} tenantProfile={tenantProfile} />}
           {activeTab === 'boplats' && <ApartmentScreen availableApartments={availableApartments} />}
           {activeTab === 'notiser' && <NotificationScreen notifications={notifications} tenantProfile={tenantProfile} />}
           
