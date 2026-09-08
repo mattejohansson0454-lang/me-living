@@ -27,13 +27,13 @@ export default async function handler(req, res) {
     const modelsData = await modelsRes.json();
     const modelsList = modelsData.data || [];
 
-    // Välj en ren chattmodell och undvik eventuella special-/verktygsmodeller
-    const chatModel = modelsList.find(m => 
-      (m.id.includes('llama-3.1-8b') || m.id.includes('8b-instant') || m.id.includes('instruct')) && 
-      !m.id.includes('tool')
-    ) || modelsList.find(m => !m.id.includes('tool')) || modelsList[0];
+    // Filtrera bort ljud-, embed- och skyddsmodeller för att endast hitta chattmodeller
+    const validChatModels = modelsList.filter(m => {
+      const id = m.id.toLowerCase();
+      return !id.includes('whisper') && !id.includes('embed') && !id.includes('guard') && !id.includes('tts');
+    });
 
-    const selectedModel = chatModel ? chatModel.id : 'llama-3.1-8b-instant';
+    const selectedModel = validChatModels.length > 0 ? validChatModels[0].id : 'llama-3.1-8b-instant';
 
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
