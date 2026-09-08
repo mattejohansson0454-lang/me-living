@@ -1,5 +1,3 @@
-import { tenantResponsibilities } from '../src/services/knowledgeBase';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -9,9 +7,11 @@ export default async function handler(req, res) {
     const { currentMessages, userText, tenantProfile } = req.body;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6J34D4DuGpXXJSPqhoH3XikJUSbBShiaGE-cZR0CNRzYw';
 
-    const knowledgeBaseText = tenantResponsibilities
-      ? tenantResponsibilities.map(r => `- Nyckelord (${r.keywords.join(', ')}): ${r.guide}`).join('\n')
-      : '';
+    const knowledgeBaseText = `
+    - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
+    - Nyckelord (trapphus, port, belysning): Fel i gemensamma utrymmen anmäls till fastigheten.
+    - Nyckelord (vitvaror, spis, kyl, frys): Lägenhetsfel som åtgärdas av Vidingehem om det inte vållats av vårdslöshet.
+    `;
 
     const systemPrompt = `Du är Vidingehems officiella boendeassistent. Din uppgift är att hjälpa hyresgäster med felanmälningar, besiktningssynpunkter, allmänna frågor och information, bedöma om ansvaret ligger på hyresgästen eller fastigheten, samt samla in information för att registrera ärendet korrekt i Momentum.
 
