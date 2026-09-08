@@ -1,37 +1,91 @@
-// services/aiService.js
+// aiService.js
 import { tenantResponsibilities } from './knowledgeBase';
 
-export async function callAI(currentMessages, userText, tenantProfile = {}) {
-  // Simulera kort svarstid för naturlig känsla
-  await new Promise(resolve => setTimeout(resolve, 600));
+const GEMINI_API_KEY = 'AQ.Ab8RN6JGtmcLdIu08uGwjjq71dLNMM6-dGoubwgM6PoMADQP1Q';
 
-  const text = userText.toLowerCase();
-  const fullHistoryText = currentMessages.map(m => m.content.toLowerCase()).join(' ') + ' ' + text;
+export const callAI = async (currentMessages, userText, tenantProfile = {}) => {
+  try {
+    const knowledgeBaseText = tenantResponsibilities
+      .map(r => `- Nyckelord (${r.keywords.join(', ')}): ${r.guide}`)
+      .join('\n');
 
-  // Tillgängliga teammedlemmar att fördela ärenden på
-  const technicians = ['Kevin', 'Max', 'Radoman', 'Fatmir', 'Patrik', 'Andrzej'];
-  const randomTech = technicians[Math.floor(Math.random() * technicians.length)];
+    const systemPrompt = `Du är Vidingehems officiella boendeassistent. Din uppgift är att hjälpa hyresgäster med felanmälningar, bedöma om ansvaret ligger på hyresgästen eller fastigheten, och samla in information för att registrera ärendet korrekt i Momentum.
 
-  // 1. Om användaren beskriver ett fel men inte valt utrymme ännu
-  if (!fullHistoryText.includes('badrum') && !fullHistoryText.includes('kök') && !fullHistoryText.includes('vardagsrum') && !fullHistoryText.includes('hall') && !fullHistoryText.includes('sovrum')) {
-    return `Jag förstår. För att kunna registrera felanmälan till Vidingehems fastighetsteam behöver jag veta vilket utrymme det gäller.\n\nSVARSALTERNATIV: ["Badrum", "Kök", "Vardagsrum", "Hall", "Sovrum"]`;
+Inloggad hyresgäst (används automatiskt för Fastighet, Byggnad och Lägenhet):
+- Namn: ${tenantProfile.name || 'Mattias'}
+- Fastighet: ${tenantProfile.property || 'Fastighet X'}
+- Byggnad: ${tenantProfile.building || 'Byggnad Y'}
+- Lägenhet: ${tenantProfile.apartment || 'Lgh 1101'}
+
+Intern kunskapsbas och ansvarsfördelningar:
+${knowledgeBaseText}
+
+Tillgängliga teammedlemmar för ärendetilldelning på Vidingehem:
+- Kevin
+- Max
+- Radoman
+- Fatmir
+- Patrik
+- Andrzej
+
+Obligatoriska uppgifter som MÅSTE samlas in:
+1. **Utrymme:** (t.ex. Kök, Badrum, Hall, Vardagsrum, Sovrum, Balkong, Förråd)
+2. **Utrustning / Komponent:** (t.ex. Spis, Kyl/frys, Duschblandare, Wc-stol, Element, Dörr, Fönster)
+3. **Beskrivning av felet:**
+4. **Tillträde & Nyckel:** (Huvudnyckel / Tubnyckel / Ring och avtala tid)
+5. **Husdjur:** (Hund, katt, inga husdjur)
+
+REGLER FÖR SVAR OCH KLICKBARA RUTOR:
+- Ställ max 1-2 frågor åt gången och var professionell.
+- Du MÅSTE inkludera klickbara svarsalternativ i slutet av varje svar på exakt detta format så att appen kan rita ut klickbara rutor:
+  SVARSALTERNATIV: ["Alternativ 1", "Alternativ 2", "Alternativ 3"]
+- När ALL information (Utrymme, Utrustning, Beskrivning, Tillträde, Husdjur) är samlad, sammanfatta ärendet komplett för registrering i Momentum enligt exakt denna hierarki:
+   - **Fastighet / Byggnad / Lägenhet:** [Hämtas från hyresgästprofil]
+   - **Utrymme:** [...]
+   - **Utrustning / Komponent:** [...]
+   - **Beskrivning:** [...]
+   - **Tillträde & Nyckel:** [...]
+   - **Husdjur:** [...]
+   - **Ansvarig tekniker:** [Vald bland Kevin, Max, Radoman, Fatmir, Patrik, Andrzej]
+   - **Status:** Registrerat`;
+
+    const contents = currentMessages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+    
+    contents.push({ role: 'user', parts: [{ text: userText }] });
+
+    // Ändrat från gemini-3.6-flash till gemini-1.5-flash
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: contents,
+        generationConfig: {
+          temperature: 0.3,
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Gemini API Felmeddelande:', data);
+      return `⚠️ API-fel från Google: ${data.error?.message || 'Kontrollera att din API-nyckel är korrekt.'}`;
+    }
+
+    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    return 'Kunde inte tolka svaret från Google AI.';
+  } catch (error) {
+    console.error('Nätverksfel:', error);
+    return `Ett nätverksfel uppstod: ${error.message}`;
   }
-
-  // 2. Om utrymme är valt men inte komponent/utrustning
-  if (!fullHistoryText.includes('spis') && !fullHistoryText.includes('kyl') && !fullHistoryText.includes('blandare') && !fullHistoryText.includes('wc') && !fullHistoryText.includes('element') && !fullHistoryText.includes('stopp')) {
-    return `Tack. Vilken typ av utrustning eller komponent rör det sig om i utrymmet?\n\nSVARSALTERNATIV: ["Vatten / Avlopp / Stopp", "El / Belysning", "Vitvaror", "Dörr / Fönster", "Övrigt"]`;
-  }
-
-  // 3. Om tillträde saknas
-  if (!fullHistoryText.includes('hemma') && !fullHistoryText.includes('tub') && !fullHistoryText.includes('ring')) {
-    return `Hur önskar du att tekniker ska få tillträde till lägenheten (${tenantProfile.apartment || 'Lgh 1201'})?\n\nSVARSALTERNATIV: ["Hemma under besöket", "Nyckel i tub", "Ring mig innan besök"]`;
-  }
-
-  // 4. Om husdjur saknas
-  if (!fullHistoryText.includes('husdjur') && !fullHistoryText.includes('inga') && !fullHistoryText.includes('hund') && !fullHistoryText.includes('katt')) {
-    return `Finns det några husdjur i lägenheten som tekniker behöver ta hänsyn till?\n\nSVARSALTERNATIV: ["Inga husdjur", "Hund finns", "Katt finns"]`;
-  }
-
-  // 5. Slutsteg: Skapa den kompletta sammanfattningen som triggar Momentum-ärendet
-  return `Tack för alla uppgifter! Ärendet har nu kontrollerats mot Vidingehems ansvarsfördelning och registrerats.\n\n- **Fastighet / Byggnad / Lägenhet:** ${tenantProfile.fullObject || '8832701-50A-1201'}\n- **Utrymme:** Enligt angivet\n- **Utrustning / Komponent:** Enligt angivet\n- **Beskrivning:** ${userText}\n- **Tillträde & Nyckel:** Enligt vald metod\n- **Husdjur:** Enligt angivet\n- **Ansvarig tekniker:** ${randomTech}\n- **Status:** Registrerat`;
-}
+};
