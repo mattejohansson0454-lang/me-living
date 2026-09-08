@@ -72,14 +72,14 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    const response =- await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: messages,
         temperature: 0.3
       })
