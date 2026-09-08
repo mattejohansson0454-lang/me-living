@@ -5,10 +5,10 @@ export default async function handler(req, res) {
 
   try {
     const { currentMessages, userText, tenantProfile } = req.body;
-    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+    const API_KEY = process.env.OPENROUTER_API_KEY || process.env.GROQ_API_KEY;
 
-    if (!OPENROUTER_API_KEY) {
-      return res.status(500).json({ error: 'OPENROUTER_API_KEY saknas i miljövariablerna.' });
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'API-nyckel saknas i miljövariablerna.' });
     }
 
     const knowledgeBaseText = `
@@ -76,7 +76,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${API_KEY}`,
         'HTTP-Referer': 'https://meliving.vercel.app',
         'X-Title': 'Vidingehem Boendeassistent'
       },
