@@ -56,11 +56,12 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     
     contents.push({ role: 'user', parts: [{ text: userText }] });
 
-    // Skicka nyckeln via URL-parametern ?key= i stället för Authorization-header
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    // Använd x-goog-api-key header för att undvika fel med OAuth 2-tokens
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY
       },
       body: JSON.stringify({
         system_instruction: {
