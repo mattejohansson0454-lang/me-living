@@ -11,6 +11,27 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GROQ_API_KEY saknas i miljövariablerna i Vercel.' });
     }
 
+    const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      }
+    });
+
+    if (!modelsRes.ok) {
+      const errText = await modelsRes.text();
+      return res.status(500).json({ error: `Kunde inte verifiera Groq-nyckel / hämta modeller: ${errText}` });
+    }
+
+    const modelsData = await modelsRes.json();
+    const modelsList = modelsData.data || [];
+
+    if (modelsList.length === 0) {
+      return res.status(500).json({ error: 'Groq returnerade inga tillgängliga modeller för denna API-nyckel.' });
+    }
+
+    const selectedModel = modelsList[0].id;
+
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
     - Nyckelord (trapphus, port, belysning): Fel i gemensamma utrymmen anmäls till fastigheten.
@@ -72,49 +93,23 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    // Lista med modeller att testa i tur och ordning om någon dör
-    const modelsToTry = [
-      'llama-3.1-8b-instant',
-      'llama-3.2-3b-preview',
-      'llama-3.2-1b-preview',
-      'llama-3.3-70b-versatile'
-    ];
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        messages: messages,
+        temperature: 0.3
+      })
+    });
 
-    let response = null;
-    let data = null;
-    let lastError = '';
+    const data = await response.json();
 
-    for (const model of modelsToTry) {
-      try {
-        const resCandidate = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: messages,
-            temperature: 0.3
-          })
-        });
-
-        const dataCandidate = await resCandidate.json();
-
-        if (resCandidate.ok) {
-          response = resCandidate;
-          data = dataCandidate;
-          break; // Hittade en fungerande modell, gå vidare
-        } else {
-          lastError = dataCandidate.error?.message || 'Okänt fel';
-        }
-      } catch (err) {
-        lastError = err.message;
-      }
-    }
-
-    if (!response || !response.ok) {
-      return res.status(500).json({ error: `Alla modeller misslyckades. Senaste fel: ${lastError}` });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || 'Groq API error' });
     }
 
     const aiText = data.choices[0]?.message?.content || 'Inget svar från AI.';
