@@ -1,7 +1,7 @@
 // services/aiService.js
 import { tenantResponsibilities } from './knowledgeBase';
 
-const GEMINI_API_KEY = 'AQ.Ab8RN6LAYUP3AH9MiDibfOkRgR-vCSm1RK1NCeGQmOGZ_sZK_A';
+const GEMINI_API_KEY = 'AQ.Ab8RN6J34D4DuGpXXJSPqhoH3XikJUSbBShiaGE-cZR0CNRzYw';
 
 export const callAI = async (currentMessages, userText, tenantProfile = {}) => {
   try {
@@ -77,7 +77,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
 
     if (!response.ok) {
       console.error('Gemini API Felmeddelande:', data);
-      return `⚠️ API-fel från Google: ${data.error?.message || 'Kontrollera att din autentisering är korrekt.'}`;
+      return `⚠️ API-fel från Google: ${data.error?.message || 'Kontrollera att din nyckel är korrekt.'}`;
     }
 
     if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
