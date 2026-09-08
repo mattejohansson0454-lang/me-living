@@ -11,29 +11,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GROQ_API_KEY saknas i miljövariablerna i Vercel.' });
     }
 
-    // 1. Hämta tillgängliga modeller dynamiskt från Groq så vi slipper hårdkodade namn som utgår
-    const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      }
-    });
-
-    if (!modelsRes.ok) {
-      const errText = await modelsRes.text();
-      return res.status(500).json({ error: `Kunde inte hämta modeller från Groq: ${errText}` });
-    }
-
-    const modelsData = await modelsRes.json();
-    const activeModels = modelsData.data || [];
-
-    // Välj i första hand en Llama-modell, annars den första tillgängliga chattmodellen
-    const selectedModel = activeModels.find(m => m.id.includes('llama'))?.id || activeModels[0]?.id;
-
-    if (!selectedModel) {
-      return res.status(500).json({ error: 'Inga aktiva modeller hittades på ditt Groq-konto.' });
-    }
-
     const knowledgeBaseText = `
     - Nyckelord (gräs, gård, utemiljö, trädgård): Skötsel av gård och grönytor hanteras av Vidingehems yttre skötselteam.
     - Nyckelord (trapphus, port, belysning): Fel i gemensamma utrymmen anmäls till fastigheten.
@@ -95,7 +72,6 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    // 2. Använd den dynamiskt hittade modellen i anropet
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -103,7 +79,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: 'mixtral-8x7b-32768',
         messages: messages,
         temperature: 0.3
       })
