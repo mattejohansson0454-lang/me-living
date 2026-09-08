@@ -5,10 +5,10 @@ export default async function handler(req, res) {
 
   try {
     const { currentMessages, userText, tenantProfile } = req.body;
-    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-    if (!GROQ_API_KEY) {
-      return res.status(500).json({ error: 'GROQ_API_KEY saknas i miljövariablerna.' });
+    if (!OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'OPENROUTER_API_KEY saknas i miljövariablerna.' });
     }
 
     const knowledgeBaseText = `
@@ -72,14 +72,16 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     });
     messages.push({ role: 'user', content: userText });
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://meliving.vercel.app',
+        'X-Title': 'Vidingehem Boendeassistent'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'meta-llama/llama-3-8b-instruct:free',
         messages: messages,
         temperature: 0.3
       })
@@ -88,7 +90,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'Groq API error' });
+      return res.status(response.status).json({ error: data.error?.message || 'OpenRouter API error' });
     }
 
     const aiText = data.choices[0]?.message?.content || 'Inget svar från AI.';
