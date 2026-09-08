@@ -1,7 +1,7 @@
-// aiService.js
+// services/aiService.js
 import { tenantResponsibilities } from './knowledgeBase';
 
-const GEMINI_API_KEY = 'AQ.Ab8RN6JGtmcLdIu08uGwjjq71dLNMM6-dGoubwgM6PoMADQP1Q';
+const GEMINI_API_KEY = 'AQ.Ab8RN6LAYUP3AH9MiDibfOkRgR-vCSm1RK1NCeGQmOGZ_sZK_A';
 
 export const callAI = async (currentMessages, userText, tenantProfile = {}) => {
   try {
@@ -56,11 +56,11 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
     
     contents.push({ role: 'user', parts: [{ text: userText }] });
 
-    // Ändrat från gemini-3.6-flash till gemini-1.5-flash
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GEMINI_API_KEY}`
       },
       body: JSON.stringify({
         system_instruction: {
@@ -77,7 +77,7 @@ REGLER FÖR SVAR OCH KLICKBARA RUTOR:
 
     if (!response.ok) {
       console.error('Gemini API Felmeddelande:', data);
-      return `⚠️ API-fel från Google: ${data.error?.message || 'Kontrollera att din API-nyckel är korrekt.'}`;
+      return `⚠️ API-fel från Google: ${data.error?.message || 'Kontrollera att din autentisering är korrekt.'}`;
     }
 
     if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
