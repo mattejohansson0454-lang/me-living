@@ -17,15 +17,16 @@ import NotificationScreen from './screens/NotificationScreen';
 
 // Importera services
 import { loginWithBankId } from './services/bankIdService';
+import { getTenantProfile } from './services/tenantMock';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [tenantProfile, setTenantProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState('kundservice');
   const [activeSubTab, setActiveSubTab] = useState(null);
 
-  // Kontrollera om det finns en sparad session när appen startar (så användaren slipper logga in igen)
+  // Kontrollera om det finns en sparad session när appen startar
   useEffect(() => {
     checkUserSession();
   }, []);
@@ -34,7 +35,10 @@ export default function App() {
     try {
       const savedToken = await SecureStore.getItemAsync('vidingehem_user_token');
       if (savedToken) {
-        setIsAuthenticated(true);
+        // Om token finns, ladda standardprofilen (eller spara vilken användare som var inloggad)
+        // Här sätter vi Mattias (admin) som standard vid återanvänd session
+        const defaultTenant = getTenantProfile('user_mattias');
+        setTenantProfile(defaultTenant);
       }
     } catch (error) {
       console.log('Kunde inte läsa sparad session', error);
@@ -46,7 +50,7 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await SecureStore.deleteItemAsync('vidingehem_user_token');
-      setIsAuthenticated(false);
+      setTenantProfile(null);
     } catch (error) {
       console.log('Kunde inte radera session', error);
     }
@@ -140,12 +144,12 @@ export default function App() {
     );
   }
 
-  // Om användaren inte är inloggad -> Visa BankID-inloggning
-  if (!isAuthenticated) {
+  // Om användaren inte är inloggad -> Visa BankID-inloggning (tar emot vald tenant från LoginScreen)
+  if (!tenantProfile) {
     return (
       <SafeAreaProvider>
         <SafeAreaView style={[styles.container, { flex: 1, backgroundColor: '#121212' }]}>
-          <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />
+          <LoginScreen onLoginSuccess={(selectedTenant) => setTenantProfile(selectedTenant)} />
         </SafeAreaView>
       </SafeAreaProvider>
     );
@@ -160,7 +164,7 @@ export default function App() {
         <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16 }]}>
           <Image source={require('./logga.png')} style={styles.vidingehemLogoImage} resizeMode="contain" />
           <TouchableOpacity onPress={handleLogout} style={[{ padding: 6 }, { cursor: 'pointer' }]}>
-            <Text style={{ color: '#AAAAAA', fontSize: 12 }}>Logga ut</Text>
+            <Text style={{ color: '#AAAAAA', fontSize: 12 }}>Logga ut ({tenantProfile.name})</Text>
           </TouchableOpacity>
         </View>
 
@@ -217,16 +221,16 @@ export default function App() {
         )}
 
         <View style={{ flex: 1 }}>
-          {activeTab === 'kundservice' && <ChatScreen myTickets={myTickets} setMyTickets={setMyTickets} />}
+          {activeTab === 'kundservice' && <ChatScreen myTickets={myTickets} setMyTickets={setMyTickets} tenantProfile={tenantProfile} />}
           {activeTab === 'boplats' && <ApartmentScreen availableApartments={availableApartments} />}
-          {activeTab === 'notiser' && <NotificationScreen notifications={notifications} />}
+          {activeTab === 'notiser' && <NotificationScreen notifications={notifications} tenantProfile={tenantProfile} />}
           
           {activeTab === 'boende' && (
             <>
               {activeSubTab === 'arenden' && <TicketScreen myTickets={myTickets} />}
               {activeSubTab === 'fakturor' && <InvoiceScreen invoices={invoices} payInvoice={payInvoice} />}
               {activeSubTab === 'tillval' && <AddonScreen addons={addons} toggleAddon={toggleAddon} />}
-              {!activeSubTab && <HousingScreen />}
+              {!activeSubTab && <HousingScreen tenantProfile={tenantProfile} />}
             </>
           )}
         </View>
